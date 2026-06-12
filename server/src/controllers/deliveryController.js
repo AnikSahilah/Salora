@@ -62,6 +62,16 @@ async function updateStatus(req, res) {
     })
   }
 
+  if (status === "TERKIRIM") {
+    const payment = await prisma.payment.findUnique({ where: { orderId } })
+    if (payment && payment.metode === "COD") {
+      await prisma.payment.update({
+        where: { orderId },
+        data: { status: "DIBAYAR" },
+      })
+    }
+  }
+
   res.json(updated)
 }
 
@@ -86,6 +96,34 @@ async function getMyDeliveries(req, res) {
   res.json(deliveries)
 }
 
+async function claim(req, res) {
+  const orderId = parseInt(req.params.orderId)
+
+  const order = await prisma.order.findUnique({ where: { id: orderId } })
+
+  if (!order) {
+    return res.status(404).json({ message: "Pesanan tidak ditemukan" })
+  }
+
+  const existing = await prisma.delivery.findUnique({ where: { orderId } })
+
+  if (existing) {
+    return res.status(400).json({ message: "Sudah ada kurir" })
+  }
+
+  const delivery = await prisma.delivery.create({
+    data: { orderId, kurirId: req.user.id },
+    include: { kurir: { select: { id: true, name: true, phone: true } } },
+  })
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: "SIAP_DIANTAR" },
+  })
+
+  res.status(201).json(delivery)
+}
+
 async function getAvailable(req, res) {
   if (req.user.role !== "KURIR" && req.user.role !== "ADMIN") {
     return res.status(403).json({ message: "Tidak punya akses" })
@@ -105,4 +143,4 @@ async function getAvailable(req, res) {
   res.json(orders)
 }
 
-module.exports = { assign, updateStatus, getMyDeliveries, getAvailable }
+module.exports = { assign, claim, updateStatus, getMyDeliveries, getAvailable }

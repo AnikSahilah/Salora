@@ -37,7 +37,7 @@ function Register() {
       })
 
       setToken(data.token)
-      navigate("/")
+      navigate("/dashboard")
     } catch (err) {
       setError(err.message)
     } finally {

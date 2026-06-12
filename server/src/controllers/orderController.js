@@ -10,10 +10,15 @@ async function generateKode() {
 }
 
 async function create(req, res) {
-  const { items, catatan, alamatKirim } = req.body
+  const { items, catatan, alamatKirim, metodePembayaran } = req.body
 
   if (!items || items.length === 0) {
     return res.status(400).json({ message: "Minimal 1 item" })
+  }
+
+  const metode = metodePembayaran || "COD"
+  if (!["COD", "MIDTRANS"].includes(metode)) {
+    return res.status(400).json({ message: "Metode pembayaran tidak valid" })
   }
 
   const menuIds = items.map((i) => i.menuId)
@@ -40,6 +45,8 @@ async function create(req, res) {
   const totalHarga = orderItems.reduce((sum, i) => sum + i.subtotal, 0)
   const kodeOrder = await generateKode()
 
+  const isCOD = metode === "COD"
+
   const order = await prisma.order.create({
     data: {
       kodeOrder,
@@ -47,9 +54,19 @@ async function create(req, res) {
       totalHarga,
       catatan,
       alamatKirim,
+      status: isCOD ? "DIPROSES" : "MENUNGGU_PEMBAYARAN",
       orderItems: { create: orderItems },
+      payment: {
+        create: {
+          metode,
+          status: "MENUNGGU",
+        },
+      },
     },
-    include: { orderItems: { include: { menu: true } } },
+    include: {
+      orderItems: { include: { menu: true } },
+      payment: true,
+    },
   })
 
   res.status(201).json(order)
