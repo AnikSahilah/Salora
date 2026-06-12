@@ -1,0 +1,58 @@
+const umkmData = [
+  {
+    id: 1,
+    name: "Warung Mbok Sum",
+    category: "Makanan Berat",
+    description: "Nasi liwet, ayam goreng, sambal khas Solo.",
+    icon: "🍛",
+    rating: 4.5,
+    location: "Solo",
+  },
+  {
+    id: 2,
+    name: "Sate Pak Agus",
+    category: "Sate & Bakar",
+    description: "Sate ayam & kambing dengan bumbu kacang khas Madura.",
+    icon: "🍢",
+    rating: 4.8,
+    location: "Madura",
+  },
+  {
+    id: 3,
+    name: "Bakso Cak Di",
+    category: "Makanan Berat",
+    description: "Bakso sapi kenyal porsi besar, kuah kaldu bening.",
+    icon: "🍜",
+    rating: 4.6,
+    location: "Malang",
+  },
+  {
+    id: 4,
+    name: "Kue Cubit Bu Rina",
+    category: "Cemilan",
+    description: "Kue cubit aneka topping: coklat, keju, green tea.",
+    icon: "🥞",
+    rating: 4.3,
+    location: "Bandung",
+  },
+  {
+    id: 5,
+    name: "Pisang Gapit Mak Yem",
+    category: "Cemilan",
+    description: "Pisang gapit khas Jogja, legit dengan saus gula merah.",
+    icon: "🍌",
+    rating: 4.7,
+    location: "Jogja",
+  },
+  {
+    id: 6,
+    name: "Es Teler Bu Ani",
+    category: "Minuman",
+    description: "Es teler segar campur alpukat, kelapa, dan susu manis.",
+    icon: "🥥",
+    rating: 4.4,
+    location: "Jakarta",
+  },
+]
+
+export default umkmData

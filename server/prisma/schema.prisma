@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PEMBELI
+  PEMILIK
+  KURIR
+  ADMIN
+}
+
+enum StatusUmkm {
+  AKTIF
+  NONAKTIF
+  MENUNGGU
+}
+
+enum StatusOrder {
+  MENUNGGU_PEMBAYARAN
+  DIPROSES
+  SIAP_DIANTAR
+  DALAM_PERJALANAN
+  SELESAI
+  DIBATALKAN
+}
+
+enum StatusDelivery {
+  MENUNGGU_KURIR
+  DIJEMPUT
+  DALAM_PERJALANAN
+  TERKIRIM
+}
+
+enum StatusPembayaran {
+  MENUNGGU
+  DIBAYAR
+  GAGAL
+  REFUND
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(PEMBELI)
+  phone     String?
+  avatar    String?
+  alamat    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  umkm       Umkm?
+  orders     Order[]
+  reviews    Review[]
+  deliveries Delivery[]
+
+  @@map("users")
+}
+
+model Umkm {
+  id        Int        @id @default(autoincrement())
+  pemilikId Int      @unique @map("pemilik_id")
+  nama      String
+  deskripsi String?
+  kategori  String?
+  foto      String?
+  alamat    String
+  kota      String
+  provinsi  String
+  status    StatusUmkm @default(MENUNGGU)
+  rating    Float      @default(0)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  pemilik  User     @relation(fields: [pemilikId], references: [id])
+  menus    Menu[]
+  reviews  Review[]
+
+  @@map("umkm")
+}
+
+model Menu {
+  id        Int      @id @default(autoincrement())
+  umkmId    Int      @map("umkm_id")
+  nama      String
+  deskripsi String?
+  harga     Float
+  foto      String?
+  tersedia  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  umkm       Umkm         @relation(fields: [umkmId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("menu")
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  kodeOrder   String      @unique @map("kode_order")
+  pembeliId   Int         @map("pembeli_id")
+  status      StatusOrder @default(MENUNGGU_PEMBAYARAN)
+  totalHarga  Float       @map("total_harga")
+  catatan     String?
+  alamatKirim String      @map("alamat_kirim")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  pembeli    User          @relation(fields: [pembeliId], references: [id])
+  orderItems OrderItem[]
+  payment    Payment?
+  delivery   Delivery?
+  review     Review?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          Int   @id @default(autoincrement())
+  orderId     Int   @map("order_id")
+  menuId      Int   @map("menu_id")
+  quantity    Int
+  hargaSatuan Float @map("harga_satuan")
+  subtotal    Float
+
+  order Order @relation(fields: [orderId], references: [id])
+  menu  Menu  @relation(fields: [menuId], references: [id])
+
+  @@map("order_items")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  pembeliId Int      @map("pembeli_id")
+  umkmId    Int      @map("umkm_id")
+  orderId   Int      @unique @map("order_id")
+  rating    Int
+  komentar  String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  pembeli User @relation(fields: [pembeliId], references: [id])
+  umkm    Umkm @relation(fields: [umkmId], references: [id])
+  order   Order @relation(fields: [orderId], references: [id])
+
+  @@map("reviews")
+}
+
+model Delivery {
+  id        Int            @id @default(autoincrement())
+  orderId   Int            @unique @map("order_id")
+  kurirId   Int            @map("kurir_id")
+  status    StatusDelivery @default(MENUNGGU_KURIR)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+  kurir User  @relation(fields: [kurirId], references: [id])
+
+  @@map("deliveries")
+}
+
+model Payment {
+  id              Int              @id @default(autoincrement())
+  orderId         Int              @unique @map("order_id")
+  metode          String
+  status          StatusPembayaran @default(MENUNGGU)
+  midtransTransId String?          @map("midtrans_trans_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
