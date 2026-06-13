@@ -6,6 +6,7 @@ import useNotificationPolling from "../hooks/useNotificationPolling.js"
 import DashboardPemilik from "./pemilik/DashboardPemilik.jsx"
 import DashboardPembeli from "./pembeli/DashboardPembeli.jsx"
 import DashboardKurir from "./kurir/DashboardKurir.jsx"
+import DashboardAdmin from "./admin/DashboardAdmin.jsx"
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -34,6 +35,7 @@ function Dashboard() {
   if (user.role === "PEMILIK") return <DashboardPemilik user={user} />
   if (user.role === "PEMBELI") return <DashboardPembeli user={user} />
   if (user.role === "KURIR") return <DashboardKurir user={user} />
+  if (user.role === "ADMIN") return <DashboardAdmin user={user} />
 
   return (
     <div className="dashboard-page">

@@ -4,12 +4,14 @@ const {
   verifyUmkm,
   getPendingUmkm,
   getAllOrders,
+  getAllUmkm,
 } = require("../controllers/adminController.js")
 const { authenticate, authorize } = require("../middleware/auth.js")
 
 const router = express.Router()
 
 router.get("/users", authenticate, authorize("ADMIN"), getAllUsers)
+router.get("/umkm", authenticate, authorize("ADMIN"), getAllUmkm)
 router.get("/umkm/pending", authenticate, authorize("ADMIN"), getPendingUmkm)
 router.get("/orders", authenticate, authorize("ADMIN"), getAllOrders)
 router.put("/umkm/:id/verify", authenticate, authorize("ADMIN"), verifyUmkm)

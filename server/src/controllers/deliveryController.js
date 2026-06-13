@@ -20,7 +20,7 @@ async function assign(req, res) {
 
   const delivery = await prisma.delivery.create({
     data: { orderId, kurirId },
-    include: { kurir: { select: { id: true, name: true, phone: true } } },
+    include: { kurir: { select: { id: true, name: true, phone: true, latitude: true, longitude: true } } },
   })
 
   await prisma.order.update({
@@ -121,7 +121,7 @@ async function claim(req, res) {
 
   const delivery = await prisma.delivery.create({
     data: { orderId, kurirId: req.user.id },
-    include: { kurir: { select: { id: true, name: true, phone: true } } },
+    include: { kurir: { select: { id: true, name: true, phone: true, latitude: true, longitude: true } } },
   })
 
   await prisma.order.update({

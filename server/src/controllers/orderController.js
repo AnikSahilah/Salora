@@ -88,7 +88,7 @@ async function getMyOrders(req, res) {
     include: {
       orderItems: { include: { menu: true } },
       payment: true,
-      delivery: { include: { kurir: { select: { id: true, name: true, phone: true } } } },
+      delivery: { include: { kurir: { select: { id: true, name: true, phone: true, latitude: true, longitude: true } } } },
     },
     orderBy: { createdAt: "desc" },
   })
@@ -102,10 +102,10 @@ async function getById(req, res) {
   const order = await prisma.order.findUnique({
     where: { id },
     include: {
-      pembeli: { select: { id: true, name: true, phone: true } },
+      pembeli: { select: { id: true, name: true, phone: true, latitude: true, longitude: true } },
       orderItems: { include: { menu: true } },
       payment: true,
-      delivery: { include: { kurir: { select: { id: true, name: true, phone: true } } } },
+      delivery: { include: { kurir: { select: { id: true, name: true, phone: true, latitude: true, longitude: true } } } },
     },
   })
 
@@ -164,7 +164,7 @@ async function getPemilikOrders(req, res) {
       orderItems: { some: { menu: { umkmId: umkm.id } } },
     },
     include: {
-      pembeli: { select: { id: true, name: true, phone: true } },
+      pembeli: { select: { id: true, name: true, phone: true, latitude: true, longitude: true } },
       orderItems: {
         where: { menu: { umkmId: umkm.id } },
         include: { menu: true },

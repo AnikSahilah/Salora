@@ -10,9 +10,33 @@ const sidebarItems = [
 ]
 
 function DashboardKurir({ user }) {
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [page, setPage] = useState("ambil")
   const [refresh, setRefresh] = useState(0)
+
+  async function updateLokasiKurir() {
+    if (!navigator.geolocation) {
+      showToast("Browser tidak mendukung geolokasi", "error")
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          await api("/location/me", {
+            method: "PUT",
+            body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+          })
+          showToast("Lokasi berhasil diperbarui! 📍", "success")
+        } catch {
+          showToast("Gagal update lokasi", "error")
+        }
+      },
+      () => showToast("Gagal mendapatkan lokasi", "error"),
+      { timeout: 10000 }
+    )
+  }
 
   return (
     <div className="dashboard-layout">
@@ -33,6 +57,10 @@ function DashboardKurir({ user }) {
               <span>{item.label}</span>
             </button>
           ))}
+          <button className="sidebar-link" onClick={updateLokasiKurir}>
+            <span>📍</span>
+            <span>Update Lokasi Saya</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">

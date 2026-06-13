@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { api, removeToken } from "../../api.js"
 import { useToast } from "../../context/ToastContext.jsx"
+import MapView from "../../components/MapView.jsx"
 
 const sidebarItems = [
   { key: "jelajah", label: "Jelajahi", icon: "🔍" },
@@ -690,6 +691,15 @@ function DetailPesananModal({ order, onClose, onRefresh }) {
           <div>
             <strong>Kurir</strong>
             <p>{order.delivery?.kurir?.name || "Belum ditugaskan"}</p>
+            {order.delivery?.kurir?.latitude && order.delivery?.kurir?.longitude && (
+              <div style={{ marginTop: 8 }}>
+                <MapView
+                  latitude={order.delivery.kurir.latitude}
+                  longitude={order.delivery.kurir.longitude}
+                  label={`📍 ${order.delivery.kurir.name}`}
+                />
+              </div>
+            )}
           </div>
         </div>
 

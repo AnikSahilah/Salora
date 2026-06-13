@@ -48,4 +48,13 @@ async function getAllOrders(req, res) {
   res.json(orders)
 }
 
-module.exports = { getAllUsers, verifyUmkm, getPendingUmkm, getAllOrders }
+async function getAllUmkm(req, res) {
+  const umkm = await prisma.umkm.findMany({
+    include: { pemilik: { select: { id: true, name: true, email: true } } },
+    orderBy: { createdAt: "desc" },
+  })
+
+  res.json(umkm)
+}
+
+module.exports = { getAllUsers, verifyUmkm, getPendingUmkm, getAllOrders, getAllUmkm }

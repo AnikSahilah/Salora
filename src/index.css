@@ -1892,6 +1892,14 @@ body {
   flex-shrink: 0;
 }
 
+.map-container {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
 .checkout-summary {
   background: #f8fafc;
   border-radius: 12px;
