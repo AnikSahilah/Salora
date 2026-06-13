@@ -15,6 +15,12 @@ const categories = [
 function DashboardPembeli({ user }) {
   const navigate = useNavigate()
   const [page, setPage] = useState("jelajah")
+  const [refreshPesanan, setRefreshPesanan] = useState(0)
+
+  function goToPesanan() {
+    setPage("pesanan")
+    setRefreshPesanan((n) => n + 1)
+  }
 
   return (
     <div className="dashboard-layout">
@@ -48,15 +54,15 @@ function DashboardPembeli({ user }) {
       </aside>
 
       <main className="sidebar-content">
-        {page === "jelajah" && <JelajahiView userId={user.id} />}
-        {page === "pesanan" && <PesananSayaView />}
+        {page === "jelajah" && <JelajahiView userId={user.id} onPesanSukses={goToPesanan} />}
+        {page === "pesanan" && <PesananSayaView key={refreshPesanan} />}
       </main>
     </div>
   )
 }
 
 /* ========== Jelajahi UMKM ========== */
-function JelajahiView({ userId }) {
+function JelajahiView({ userId, onPesanSukses }) {
   const [umkmList, setUmkmList] = useState([])
   const [search, setSearch] = useState("")
   const [kategori, setKategori] = useState("Semua")
@@ -75,7 +81,7 @@ function JelajahiView({ userId }) {
   })
 
   if (detailUmkm) {
-    return <DetailUmkmView umkm={detailUmkm} onBack={() => setDetailUmkm(null)} userId={userId} />
+    return <DetailUmkmView umkm={detailUmkm} onBack={() => setDetailUmkm(null)} userId={userId} onPesanSukses={onPesanSukses} />
   }
 
   return (
@@ -133,7 +139,7 @@ function JelajahiView({ userId }) {
 }
 
 /* ========== Detail UMKM (full page) ========== */
-function DetailUmkmView({ umkm, onBack, userId }) {
+function DetailUmkmView({ umkm, onBack, userId, onPesanSukses }) {
   const { showToast } = useToast()
   const [detail, setDetail] = useState(null)
   const [cart, setCart] = useState({})
@@ -282,7 +288,7 @@ function DetailUmkmView({ umkm, onBack, userId }) {
                   menus={getSelectedMenus()}
                   totalHarga={totalHarga}
                   umkmId={umkm.id}
-                  onSuccess={onBack}
+                  onSuccess={onPesanSukses}
                 />
               </>
             )}
@@ -296,6 +302,7 @@ function DetailUmkmView({ umkm, onBack, userId }) {
 /* ========== Checkout ========== */
 function CheckoutButton({ menus, totalHarga, umkmId, onSuccess }) {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [showForm, setShowForm] = useState(false)
   const [metodeAlamat, setMetodeAlamat] = useState("manual")
   const [alamatKirim, setAlamatKirim] = useState("")
@@ -344,7 +351,7 @@ function CheckoutButton({ menus, totalHarga, umkmId, onSuccess }) {
 
     setLoading(true)
     try {
-      await api("/orders", {
+      const order = await api("/orders", {
         method: "POST",
         body: JSON.stringify({
           items: menus.map((m) => ({ menuId: m.menu.id, quantity: m.qty })),
@@ -353,9 +360,33 @@ function CheckoutButton({ menus, totalHarga, umkmId, onSuccess }) {
           metodePembayaran: metodeBayar,
         }),
       })
-      showToast("Pesanan berhasil dibuat! 🎉", "success")
-      setShowForm(false)
-      onSuccess()
+
+      if (metodeBayar === "COD") {
+        showToast("Pesanan berhasil dibuat! 🎉", "success")
+        setShowForm(false)
+        onSuccess()
+      } else if (metodeBayar === "MIDTRANS") {
+        const snap = await api(`/payments/${order.id}/snap`, { method: "POST" })
+
+        window.snap.pay(snap.snapToken, {
+          onSuccess: () => {
+            showToast("Pembayaran berhasil! Pesanan diproses 🎉", "success")
+            setShowForm(false)
+            onSuccess()
+          },
+          onPending: () => {
+            showToast("Menunggu pembayaran...", "info")
+            setShowForm(false)
+            onSuccess()
+          },
+          onError: () => {
+            showToast("Pembayaran gagal, coba lagi", "error")
+          },
+          onClose: () => {
+            showToast("Pembayaran dibatalkan", "info")
+          },
+        })
+      }
     } catch (err) {
       showToast(err.message, "error")
     }
@@ -395,14 +426,9 @@ function CheckoutButton({ menus, totalHarga, umkmId, onSuccess }) {
                   <span>COD (Bayar di Tempat)</span>
                 </label>
                 <label className={`alamat-option ${metodeBayar === "MIDTRANS" ? "alamat-option-active" : ""}`}
-                  onClick={() => {
-                    setMetodeBayar("MIDTRANS")
-                    showToast("Segera hadir! Pilih COD dulu ya", "info")
-                    setMetodeBayar("COD")
-                  }}>
+                  onClick={() => setMetodeBayar("MIDTRANS")}>
                   <span className="alamat-option-icon">💳</span>
                   <span>Online (Midtrans)</span>
-                  <span className="badge-coming">Segera</span>
                 </label>
               </div>
             </div>
@@ -476,10 +502,13 @@ function CheckoutButton({ menus, totalHarga, umkmId, onSuccess }) {
 function PesananSayaView() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedOrder, setSelectedOrder] = useState(null)
 
-  useEffect(() => {
-    api("/orders/me").then((data) => setOrders(data)).catch(() => {}).finally(() => setLoading(false))
-  }, [])
+  function loadOrders() {
+    api("/orders/me").then((data) => setOrders(data.filter((o) => o.status !== "MENUNGGU_PEMBAYARAN"))).catch(() => {}).finally(() => setLoading(false))
+  }
+
+  useEffect(() => { loadOrders() }, [])
 
   if (loading) return <p className="text-muted" style={{ textAlign: "center", marginTop: 60 }}>Memuat...</p>
 
@@ -494,7 +523,7 @@ function PesananSayaView() {
       ) : (
         <div className="order-list">
           {orders.map((order) => (
-            <div className="order-card" key={order.id}>
+            <div className="order-card clickable" key={order.id} onClick={() => setSelectedOrder(order)}>
               <div className="order-header">
                 <span className="order-code">{order.kodeOrder}</span>
                 <span className={`order-status status-${order.status}`}>
@@ -521,7 +550,123 @@ function PesananSayaView() {
           ))}
         </div>
       )}
+
+      {selectedOrder && (
+        <DetailPesananModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onRefresh={loadOrders}
+        />
+      )}
     </>
+  )
+}
+
+function GantiCODButton({ orderId, onSuccess }) {
+  const { showToast } = useToast()
+  const [loading, setLoading] = useState(false)
+
+  async function handleGanti() {
+    if (!confirm("Ganti metode pembayaran ke COD?")) return
+    setLoading(true)
+    try {
+      await api(`/orders/${orderId}/change-to-cod`, { method: "PUT" })
+      showToast("Berhasil ganti ke COD. Pesanan langsung diproses!", "success")
+      onSuccess()
+    } catch (err) {
+      showToast(err.message, "error")
+    }
+    setLoading(false)
+  }
+
+  return (
+    <button className="btn btn-primary btn-full" onClick={handleGanti} disabled={loading}>
+      {loading ? "Memproses..." : "Ganti ke COD (Bayar di Tempat)"}
+    </button>
+  )
+}
+
+function DetailPesananModal({ order, onClose, onRefresh }) {
+  const { showToast } = useToast()
+  const [loading, setLoading] = useState(false)
+
+  async function handleCancel() {
+    if (!confirm("Yakin batalkan pesanan ini?")) return
+    setLoading(true)
+    try {
+      await api(`/orders/${order.id}/cancel`, { method: "PUT" })
+      showToast("Pesanan dibatalkan", "success")
+      onRefresh()
+      onClose()
+    } catch (err) {
+      showToast(err.message, "error")
+    }
+    setLoading(false)
+  }
+
+  const bisaBatal = order.status === "MENUNGGU_PEMBAYARAN"
+  const pakaiMidtrans = order.payment?.metode === "MIDTRANS" && order.status === "MENUNGGU_PEMBAYARAN"
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>×</button>
+
+        <div className="order-header" style={{ marginBottom: 16 }}>
+          <span className="order-code" style={{ fontSize: 18 }}>{order.kodeOrder}</span>
+          <span className={`order-status status-${order.status}`}>
+            {order.status.replace(/_/g, " ")}
+          </span>
+        </div>
+
+        <div className="checkout-summary">
+          {order.orderItems.map((item, i) => (
+            <div className="checkout-item" key={i}>
+              <span>{item.menu.nama} x{item.quantity}</span>
+              <span>Rp {(item.hargaSatuan * item.quantity).toLocaleString()}</span>
+            </div>
+          ))}
+          <div className="checkout-total">
+            <strong>Total</strong>
+            <strong>Rp {order.totalHarga.toLocaleString()}</strong>
+          </div>
+        </div>
+
+        <div className="detail-info-grid">
+          <div>
+            <strong>Alamat Kirim</strong>
+            <p>{order.alamatKirim}</p>
+          </div>
+          {order.catatan && (
+            <div>
+              <strong>Catatan</strong>
+              <p>{order.catatan}</p>
+            </div>
+          )}
+          <div>
+            <strong>Pembayaran</strong>
+            <p>{order.payment?.metode === "COD" ? "COD (Bayar di Tempat)" : "Online (Midtrans)"}</p>
+            <p>Status: {order.payment?.status?.replace(/_/g, " ") || "-"}</p>
+          </div>
+          <div>
+            <strong>Kurir</strong>
+            <p>{order.delivery?.kurir?.name || "Belum ditugaskan"}</p>
+          </div>
+        </div>
+
+        <div className="detail-actions">
+          {bisaBatal && (
+            <button className="btn btn-outline" onClick={handleCancel} disabled={loading}
+              style={{ borderColor: "#dc2626", color: "#dc2626" }}>
+              {loading ? "Memproses..." : "Batalkan Pesanan"}
+            </button>
+          )}
+          {pakaiMidtrans && (
+            <GantiCODButton orderId={order.id} onSuccess={() => { onRefresh(); onClose() }} />
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

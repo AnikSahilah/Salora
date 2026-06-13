@@ -156,4 +156,76 @@ async function getPemilikOrders(req, res) {
   res.json(orders)
 }
 
-module.exports = { create, getMyOrders, getById, updateStatus, getPemilikOrders }
+async function cancel(req, res) {
+  const id = parseInt(req.params.id)
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { payment: true },
+  })
+
+  if (!order) {
+    return res.status(404).json({ message: "Pesanan tidak ditemukan" })
+  }
+
+  if (order.pembeliId !== req.user.id && req.user.role !== "ADMIN") {
+    return res.status(403).json({ message: "Tidak punya akses" })
+  }
+
+  if (order.status !== "MENUNGGU_PEMBAYARAN") {
+    return res.status(400).json({ message: "Pesanan tidak bisa dibatalkan" })
+  }
+
+  const updated = await prisma.order.update({
+    where: { id },
+    data: { status: "DIBATALKAN" },
+  })
+
+  if (order.payment) {
+    await prisma.payment.update({
+      where: { orderId: id },
+      data: { status: "GAGAL" },
+    })
+  }
+
+  res.json(updated)
+}
+
+async function changeToCOD(req, res) {
+  const id = parseInt(req.params.id)
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { payment: true },
+  })
+
+  if (!order) {
+    return res.status(404).json({ message: "Pesanan tidak ditemukan" })
+  }
+
+  if (order.pembeliId !== req.user.id) {
+    return res.status(403).json({ message: "Bukan pesanan kamu" })
+  }
+
+  if (order.status !== "MENUNGGU_PEMBAYARAN") {
+    return res.status(400).json({ message: "Pesanan sudah diproses" })
+  }
+
+  if (!order.payment || order.payment.metode !== "MIDTRANS") {
+    return res.status(400).json({ message: "Hanya bisa dari Midtrans ke COD" })
+  }
+
+  await prisma.payment.update({
+    where: { orderId: id },
+    data: { metode: "COD", status: "MENUNGGU", midtransTransId: null },
+  })
+
+  await prisma.order.update({
+    where: { id },
+    data: { status: "DIPROSES" },
+  })
+
+  res.json({ message: "Metode berhasil diubah ke COD" })
+}
+
+module.exports = { create, getMyOrders, getById, updateStatus, getPemilikOrders, cancel, changeToCOD }

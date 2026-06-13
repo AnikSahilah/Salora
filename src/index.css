@@ -1885,6 +1885,42 @@ body {
   margin-top: 4px;
 }
 
+.clickable {
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.clickable:hover {
+  border-color: var(--orange);
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.detail-info-grid div strong {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+
+.detail-info-grid div p {
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .alamat-options {
   display: flex;
   gap: 10px;
