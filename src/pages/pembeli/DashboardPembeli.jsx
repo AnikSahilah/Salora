@@ -12,6 +12,8 @@ const categories = [
   "Semua", "Makanan Berat", "Sate & Bakar", "Cemilan", "Minuman", "Kue",
 ]
 
+const filterLabels = { MENUNGGU_KONFIRMASI: "Baru", DIPROSES: "Dimasak", SIAP_DIANTAR: "Siap Antar", DALAM_PERJALANAN: "Diantar", SELESAI: "Selesai", DIBATALKAN: "Batal" }
+
 function DashboardPembeli({ user }) {
   const navigate = useNavigate()
   const [page, setPage] = useState("jelajah")
@@ -499,9 +501,12 @@ function CheckoutButton({ menus, totalHarga, umkmId, onSuccess }) {
 }
 
 /* ========== Pesanan Saya ========== */
+const pembeliFilters = ["Semua", "MENUNGGU_KONFIRMASI", "DIPROSES", "SIAP_DIANTAR", "DALAM_PERJALANAN", "SELESAI", "DIBATALKAN"]
+
 function PesananSayaView() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState("Semua")
   const [selectedOrder, setSelectedOrder] = useState(null)
 
   function loadOrders() {
@@ -509,6 +514,9 @@ function PesananSayaView() {
   }
 
   useEffect(() => { loadOrders() }, [])
+
+  const filtered = filter === "Semua" ? orders : orders.filter((o) => o.status === filter)
+  const count = (status) => status === "Semua" ? orders.length : orders.filter((o) => o.status === status).length
 
   if (loading) return <p className="text-muted" style={{ textAlign: "center", marginTop: 60 }}>Memuat...</p>
 
@@ -518,11 +526,19 @@ function PesananSayaView() {
         <h2>Pesanan Saya</h2>
       </div>
 
-      {orders.length === 0 ? (
-        <p className="text-muted" style={{ textAlign: "center", marginTop: 60 }}>Belum ada pesanan.</p>
+      <div className="filter-chips" style={{ marginBottom: 20 }}>
+        {pembeliFilters.map((f) => (
+          <button key={f} className={`chip ${filter === f ? "chip-active" : ""}`} onClick={() => setFilter(f)}>
+            {filterLabels[f] || f} ({count(f)})
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-muted" style={{ textAlign: "center", marginTop: 60 }}>Tidak ada pesanan.</p>
       ) : (
         <div className="order-list">
-          {orders.map((order) => (
+          {filtered.map((order) => (
             <div className="order-card clickable" key={order.id} onClick={() => setSelectedOrder(order)}>
               <div className="order-header">
                 <span className="order-code">{order.kodeOrder}</span>

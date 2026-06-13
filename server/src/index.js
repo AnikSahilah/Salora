@@ -11,6 +11,7 @@ const reviewRoutes = require("./routes/review.js")
 const deliveryRoutes = require("./routes/delivery.js")
 const adminRoutes = require("./routes/admin.js")
 const paymentRoutes = require("./routes/payment.js")
+const notificationRoutes = require("./routes/notification.js")
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -30,6 +31,7 @@ app.use("/api/reviews", reviewRoutes)
 app.use("/api/delivery", deliveryRoutes)
 app.use("/api/admin", adminRoutes)
 app.use("/api/payments", paymentRoutes)
+app.use("/api/notifications", notificationRoutes)
 
 app.use((err, req, res, next) => {
   console.error(err)

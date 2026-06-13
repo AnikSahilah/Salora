@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma.js")
+const { buatNotif } = require("../config/notif.js")
 
 async function generateKode() {
   const date = new Date()
@@ -54,7 +55,7 @@ async function create(req, res) {
       totalHarga,
       catatan,
       alamatKirim,
-      status: isCOD ? "DIPROSES" : "MENUNGGU_PEMBAYARAN",
+      status: isCOD ? "MENUNGGU_KONFIRMASI" : "MENUNGGU_PEMBAYARAN",
       orderItems: { create: orderItems },
       payment: {
         create: {
@@ -68,6 +69,15 @@ async function create(req, res) {
       payment: true,
     },
   })
+
+  // Notif pemilik
+  const umkmPemilikIds = [...new Set(menus.map((m) => m.umkmId))]
+  for (const umkmId of umkmPemilikIds) {
+    const umkm = await prisma.umkm.findUnique({ where: { id: umkmId }, select: { pemilikId: true } })
+    if (umkm) {
+      await buatNotif(umkm.pemilikId, "📦 Pesanan Baru", `Pesanan ${kodeOrder} masuk. Segera konfirmasi!`)
+    }
+  }
 
   res.status(201).json(order)
 }
@@ -125,6 +135,17 @@ async function updateStatus(req, res) {
     data: { status },
   })
 
+  const notifMap = {
+    DIPROSES: ["Pesanan Diterima ✅", `Pesanan ${order.kodeOrder} diterima dan sedang dimasak.`],
+    SIAP_DIANTAR: ["Siap Diantar 🚚", `Pesanan ${order.kodeOrder} siap diantar!`],
+    DIBATALKAN: ["Pesanan Ditolak ❌", `Pesanan ${order.kodeOrder} ditolak oleh pemilik.`],
+  }
+
+  const notif = notifMap[status]
+  if (notif) {
+    await buatNotif(order.pembeliId, notif[0], notif[1])
+  }
+
   res.json(updated)
 }
 
@@ -172,7 +193,7 @@ async function cancel(req, res) {
     return res.status(403).json({ message: "Tidak punya akses" })
   }
 
-  if (order.status !== "MENUNGGU_PEMBAYARAN") {
+  if (!["MENUNGGU_PEMBAYARAN", "MENUNGGU_KONFIRMASI"].includes(order.status)) {
     return res.status(400).json({ message: "Pesanan tidak bisa dibatalkan" })
   }
 
@@ -222,7 +243,7 @@ async function changeToCOD(req, res) {
 
   await prisma.order.update({
     where: { id },
-    data: { status: "DIPROSES" },
+    data: { status: "MENUNGGU_KONFIRMASI" },
   })
 
   res.json({ message: "Metode berhasil diubah ke COD" })

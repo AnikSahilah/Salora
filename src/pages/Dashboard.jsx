@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { api, removeToken } from "../api.js"
+import { useToast } from "../context/ToastContext.jsx"
+import useNotificationPolling from "../hooks/useNotificationPolling.js"
 import DashboardPemilik from "./pemilik/DashboardPemilik.jsx"
 import DashboardPembeli from "./pembeli/DashboardPembeli.jsx"
 import DashboardKurir from "./kurir/DashboardKurir.jsx"
 
 function Dashboard() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useNotificationPolling(showToast)
 
   useEffect(() => {
     api("/auth/me")

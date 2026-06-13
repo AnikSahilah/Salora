@@ -65,7 +65,12 @@ async function notificationHandler(req, res) {
   })
 
   try {
-    const statusResponse = await apiClient.transaction.notification(req.body)
+    let statusResponse
+    try {
+      statusResponse = await apiClient.transaction.notification(req.body)
+    } catch {
+      statusResponse = req.body
+    }
 
     const orderId = statusResponse.order_id
     const transactionStatus = statusResponse.transaction_status
@@ -82,7 +87,7 @@ async function notificationHandler(req, res) {
     if (transactionStatus === "capture" || transactionStatus === "settlement") {
       paymentStatus = "DIBAYAR"
       if (order.status === "MENUNGGU_PEMBAYARAN") {
-        orderStatus = "DIPROSES"
+        orderStatus = "MENUNGGU_KONFIRMASI"
       }
     } else if (transactionStatus === "pending") {
       paymentStatus = "MENUNGGU"

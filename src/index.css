@@ -1996,3 +1996,19 @@ body {
     flex-direction: column;
   }
 }
+
+.empty-state {
+  text-align: center;
+  margin-top: 80px;
+}
+
+.empty-state p {
+  margin-top: 12px;
+  font-size: 16px;
+  color: var(--text-light);
+}
+
+.kurir-card-done {
+  opacity: 0.6;
+  border-color: var(--green);
+}

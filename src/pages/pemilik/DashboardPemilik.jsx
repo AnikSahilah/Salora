@@ -334,8 +334,14 @@ function MenuFormModal({ umkmId, editMenu, onClose, onSave }) {
 }
 
 /* ========== Pesanan ========== */
+const pemilikFilters = ["Semua", "MENUNGGU_KONFIRMASI", "DIPROSES", "SIAP_DIANTAR", "DALAM_PERJALANAN", "SELESAI", "DIBATALKAN"]
+const filterLabels = { MENUNGGU_KONFIRMASI: "Baru", DIPROSES: "Dimasak", SIAP_DIANTAR: "Siap Antar", DALAM_PERJALANAN: "Diantar", SELESAI: "Selesai", DIBATALKAN: "Batal" }
+
 function PesananView({ orders, onRefresh }) {
   const { showToast } = useToast()
+  const [filter, setFilter] = useState("Semua")
+
+  const filtered = filter === "Semua" ? orders : orders.filter((o) => o.status === filter)
 
   async function handleStatus(orderId, status) {
     try {
@@ -354,11 +360,19 @@ function PesananView({ orders, onRefresh }) {
         <h2>Pesanan Masuk</h2>
       </div>
 
-      {orders.length === 0 ? (
-        <p className="text-muted">Belum ada pesanan.</p>
+      <div className="filter-chips" style={{ marginBottom: 20 }}>
+        {pemilikFilters.map((f) => (
+          <button key={f} className={`chip ${filter === f ? "chip-active" : ""}`} onClick={() => setFilter(f)}>
+            {filterLabels[f] || f}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-muted">Tidak ada pesanan.</p>
       ) : (
         <div className="order-list">
-          {orders.map((order) => (
+          {filtered.map((order) => (
             <div className="order-card" key={order.id}>
               <div className="order-header">
                 <span className="order-code">{order.kodeOrder}</span>
@@ -378,10 +392,17 @@ function PesananView({ orders, onRefresh }) {
               </div>
               <p className="menu-price">Rp {order.totalHarga.toLocaleString()}</p>
 
-              {order.status === "MENUNGGU_PEMBAYARAN" && (
-                <button className="btn btn-primary btn-sm" onClick={() => handleStatus(order.id, "DIPROSES")}>
-                  Proses Pesanan
-                </button>
+              {order.status === "MENUNGGU_KONFIRMASI" && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn btn-primary btn-sm" onClick={() => handleStatus(order.id, "DIPROSES")}>
+                    ✅ Terima Pesanan
+                  </button>
+                  <button className="btn btn-outline btn-sm"
+                    style={{ borderColor: "#dc2626", color: "#dc2626" }}
+                    onClick={() => handleStatus(order.id, "DIBATALKAN")}>
+                    ❌ Tolak
+                  </button>
+                </div>
               )}
               {order.status === "DIPROSES" && (
                 <button className="btn btn-primary btn-sm" onClick={() => handleStatus(order.id, "SIAP_DIANTAR")}>

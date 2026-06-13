@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma.js")
+const { buatNotif } = require("../config/notif.js")
 
 async function assign(req, res) {
   const { orderId, kurirId } = req.body
@@ -34,11 +35,15 @@ async function updateStatus(req, res) {
   const orderId = parseInt(req.params.orderId)
   const { status } = req.body
 
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  })
+
   const delivery = await prisma.delivery.findUnique({
     where: { orderId },
   })
 
-  if (!delivery) {
+  if (!delivery || !order) {
     return res.status(404).json({ message: "Delivery tidak ditemukan" })
   }
 
@@ -70,6 +75,9 @@ async function updateStatus(req, res) {
         data: { status: "DIBAYAR" },
       })
     }
+    await buatNotif(order.pembeliId, "Pesanan Sampai 🎉", `Pesanan ${order.kodeOrder} sudah sampai!`)
+  } else if (status === "DALAM_PERJALANAN") {
+    await buatNotif(order.pembeliId, "Pesanan Diantar 🚚", `Pesanan ${order.kodeOrder} sedang dalam perjalanan.`)
   }
 
   res.json(updated)
@@ -120,6 +128,8 @@ async function claim(req, res) {
     where: { id: orderId },
     data: { status: "SIAP_DIANTAR" },
   })
+
+  await buatNotif(order.pembeliId, "Kurir Menuju Lokasi 🏍️", `Pesanan ${order.kodeOrder} sedang dijemput kurir.`)
 
   res.status(201).json(delivery)
 }
