@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { api, removeToken } from "../../api.js"
 import { useToast } from "../../context/ToastContext.jsx"
 import ConfirmModal from "../../components/ConfirmModal.jsx"
+import ImageUploader from "../../components/ImageUploader.jsx"
 
 const menuItems = [
   { key: "dashboard", label: "Dashboard", icon: "📊" },
@@ -271,6 +272,7 @@ function MenuFormModal({ umkmId, editMenu, onClose, onSave }) {
     nama: editMenu?.nama || "",
     deskripsi: editMenu?.deskripsi || "",
     harga: editMenu?.harga || "",
+    foto: editMenu?.foto || "",
     tersedia: editMenu?.tersedia ?? true,
   })
   const [error, setError] = useState("")
@@ -314,6 +316,10 @@ function MenuFormModal({ umkmId, editMenu, onClose, onSave }) {
           <div className="form-group">
             <label>Harga (Rp)</label>
             <input type="number" name="harga" value={form.harga} onChange={handleChange} required />
+          </div>
+          <div className="form-group">
+            <label>Foto Menu</label>
+            <ImageUploader currentImage={form.foto} onUpload={(url) => setForm({ ...form, foto: url })} />
           </div>
           {(editMenu) && (
             <div className="form-group form-checkbox">
@@ -432,6 +438,7 @@ function PengaturanView({ umkm, onRefresh }) {
     alamat: umkm.alamat || "",
     kota: umkm.kota || "",
     provinsi: umkm.provinsi || "",
+    foto: umkm.foto || "",
   })
 
   async function handleSubmit(e) {
@@ -479,6 +486,10 @@ function PengaturanView({ umkm, onRefresh }) {
             <label>Alamat</label>
             <input type="text" name="alamat" value={form.alamat} onChange={handleChange} required />
           </div>
+          <div className="form-group">
+            <label>Foto UMKM</label>
+            <ImageUploader currentImage={form.foto} onUpload={(url) => setForm({ ...form, foto: url })} />
+          </div>
           <div style={{ display: "flex", gap: 12 }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label>Kota</label>
@@ -499,7 +510,7 @@ function PengaturanView({ umkm, onRefresh }) {
 /* ========== Create UMKM (kalo belum punya) ========== */
 function CreateUmkmForm({ onCreated }) {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ nama: "", deskripsi: "", kategori: "", alamat: "", kota: "", provinsi: "" })
+  const [form, setForm] = useState({ nama: "", deskripsi: "", kategori: "", alamat: "", kota: "", provinsi: "", foto: "" })
   const [error, setError] = useState("")
 
   async function handleSubmit(e) {

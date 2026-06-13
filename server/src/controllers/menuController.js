@@ -15,7 +15,7 @@ async function create(req, res) {
   }
 
   const menu = await prisma.menu.create({
-    data: { umkmId, nama, deskripsi, harga: parseFloat(harga), foto },
+    data: { umkmId, nama, deskripsi, harga: parseFloat(harga), foto: foto || null },
   })
 
   res.status(201).json(menu)
@@ -40,13 +40,13 @@ async function update(req, res) {
 
   const updated = await prisma.menu.update({
     where: { id },
-    data: {
-      nama,
-      deskripsi,
-      harga: harga ? parseFloat(harga) : undefined,
-      foto,
-      tersedia,
-    },
+      data: {
+        nama,
+        deskripsi,
+        harga: harga ? parseFloat(harga) : undefined,
+        foto: foto || menu.foto,
+        tersedia,
+      },
   })
 
   res.json(updated)

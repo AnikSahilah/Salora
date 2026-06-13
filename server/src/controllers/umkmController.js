@@ -42,7 +42,7 @@ async function getById(req, res) {
 }
 
 async function create(req, res) {
-  const { nama, deskripsi, kategori, alamat, kota, provinsi } = req.body
+  const { nama, deskripsi, kategori, alamat, kota, provinsi, foto } = req.body
 
   if (req.user.role !== "PEMILIK") {
     return res.status(403).json({ message: "Hanya pemilik UMKM" })
@@ -65,6 +65,7 @@ async function create(req, res) {
       alamat,
       kota,
       provinsi,
+      foto: foto || null,
     },
   })
 
@@ -73,7 +74,7 @@ async function create(req, res) {
 
 async function update(req, res) {
   const id = parseInt(req.params.id)
-  const { nama, deskripsi, kategori, alamat, kota, provinsi } = req.body
+  const { nama, deskripsi, kategori, alamat, kota, provinsi, foto } = req.body
 
   const umkm = await prisma.umkm.findUnique({ where: { id } })
 
@@ -87,7 +88,7 @@ async function update(req, res) {
 
   const updated = await prisma.umkm.update({
     where: { id },
-    data: { nama, deskripsi, kategori, alamat, kota, provinsi },
+    data: { nama, deskripsi, kategori, alamat, kota, provinsi, foto },
   })
 
   res.json(updated)

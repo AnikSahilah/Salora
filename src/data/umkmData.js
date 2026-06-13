@@ -5,6 +5,7 @@ const umkmData = [
     category: "Makanan Berat",
     description: "Nasi liwet, ayam goreng, sambal khas Solo.",
     icon: "🍛",
+    foto: "",
     rating: 4.5,
     location: "Solo",
   },

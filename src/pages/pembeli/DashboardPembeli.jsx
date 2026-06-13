@@ -122,15 +122,18 @@ function JelajahiView({ userId, onPesanSukses }) {
         <div className="pembeli-grid">
           {filtered.map((umkm) => (
             <div className="pembeli-card" key={umkm.id} onClick={() => setDetailUmkm(umkm)}>
-              <div className="pembeli-card-header">
-                <span className="umkm-category">{umkm.kategori}</span>
-                <span className="pembeli-rating">⭐ {umkm.rating}</span>
-              </div>
-              <h3 className="pembeli-card-title">{umkm.nama}</h3>
-              <p className="pembeli-card-desc">{umkm.deskripsi}</p>
-              <div className="pembeli-card-footer">
-                <span>📍 {umkm.kota}</span>
-                <span>{umkm._count?.reviews || 0} ulasan</span>
+              {umkm.foto && <div className="pembeli-card-img" style={{ backgroundImage: `url(${umkm.foto})` }} />}
+              <div className="pembeli-card-body">
+                <div className="pembeli-card-header">
+                  <span className="umkm-category">{umkm.kategori}</span>
+                  <span className="pembeli-rating">⭐ {umkm.rating}</span>
+                </div>
+                <h3 className="pembeli-card-title">{umkm.nama}</h3>
+                <p className="pembeli-card-desc">{umkm.deskripsi}</p>
+                <div className="pembeli-card-footer">
+                  <span>📍 {umkm.kota}</span>
+                  <span>{umkm._count?.reviews || 0} ulasan</span>
+                </div>
               </div>
             </div>
           ))}
@@ -196,8 +199,9 @@ function DetailUmkmView({ umkm, onBack, userId, onPesanSukses }) {
         <button className="btn btn-outline btn-sm" onClick={onBack}>← Kembali</button>
       </div>
 
-      <div className="detail-header-card">
-        <div>
+      <div className="detail-header-card" style={umkm.foto ? { padding: 0, overflow: "hidden" } : {}}>
+        {umkm.foto && <img src={umkm.foto} alt={umkm.nama} className="detail-foto" />}
+        <div style={{ padding: umkm.foto ? 28 : 0 }}>
           <h2 className="detail-title">{umkm.nama}</h2>
           <p className="detail-meta">
             {umkm.kategori} • ⭐ {umkm.rating} • 📍 {umkm.kota}, {umkm.provinsi}
@@ -216,6 +220,7 @@ function DetailUmkmView({ umkm, onBack, userId, onPesanSukses }) {
             <div className="detail-menu-list">
               {detail.menus.map((menu) => (
                 <div className={`detail-menu-item ${cart[menu.id] ? "detail-menu-selected" : ""}`} key={menu.id}>
+                  {menu.foto && <img src={menu.foto} alt={menu.nama} className="menu-foto-thumb" />}
                   <div className="detail-menu-info">
                     <h4>{menu.nama}</h4>
                     <p>{menu.deskripsi}</p>
@@ -605,6 +610,24 @@ function GantiCODButton({ orderId, onSuccess }) {
 function DetailPesananModal({ order, onClose, onRefresh }) {
   const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [showReview, setShowReview] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ rating: 5, komentar: "" })
+
+  async function handleReview() {
+    try {
+      const umkmId = order.orderItems[0]?.menu.umkmId
+      await api("/reviews", {
+        method: "POST",
+        body: JSON.stringify({ orderId: order.id, umkmId, ...reviewForm }),
+      })
+      showToast("Ulasan berhasil dikirim! ⭐", "success")
+      setShowReview(false)
+      onRefresh()
+      onClose()
+    } catch (err) {
+      showToast(err.message, "error")
+    }
+  }
 
   async function handleCancel() {
     if (!confirm("Yakin batalkan pesanan ini?")) return
@@ -679,6 +702,33 @@ function DetailPesananModal({ order, onClose, onRefresh }) {
           )}
           {pakaiMidtrans && (
             <GantiCODButton orderId={order.id} onSuccess={() => { onRefresh(); onClose() }} />
+          )}
+          {order.status === "SELESAI" && !showReview && (
+            <button className="btn btn-primary btn-full" onClick={() => setShowReview(true)}>
+              ⭐ Beri Ulasan
+            </button>
+          )}
+          {showReview && (
+            <div className="review-form">
+              <h4 style={{ marginBottom: 8 }}>Beri Ulasan</h4>
+              <div className="review-stars">
+                {[1,2,3,4,5].map((b) => (
+                  <span key={b} className={`star ${b <= reviewForm.rating ? "star-on" : ""}`}
+                    onClick={() => setReviewForm({ ...reviewForm, rating: b })}>★</span>
+                ))}
+              </div>
+              <textarea
+                rows={3}
+                placeholder="Tulis komentar..."
+                value={reviewForm.komentar}
+                onChange={(e) => setReviewForm({ ...reviewForm, komentar: e.target.value })}
+                style={{ width: "100%", marginTop: 8, padding: 10, borderRadius: 10, border: "1.5px solid #e2e8f0", fontFamily: "var(--sans)", boxSizing: "border-box" }}
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button className="btn btn-primary btn-sm" onClick={handleReview}>Kirim</button>
+                <button className="btn btn-outline btn-sm" onClick={() => setShowReview(false)}>Batal</button>
+              </div>
+            </div>
           )}
         </div>
       </div>

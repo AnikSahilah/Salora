@@ -1058,11 +1058,21 @@ body {
 .pembeli-card {
   background: #fff;
   border-radius: 16px;
-  padding: 24px;
   box-shadow: var(--shadow);
   border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.pembeli-card-img {
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+}
+
+.pembeli-card-body {
+  padding: 20px 24px;
 }
 
 .pembeli-card:hover {
@@ -1852,6 +1862,36 @@ body {
 }
 
 /* ---- Checkout Modal ---- */
+.image-uploader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.image-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-foto {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+
+.menu-foto-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
 .checkout-summary {
   background: #f8fafc;
   border-radius: 12px;
@@ -1919,6 +1959,31 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.review-form {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.review-stars {
+  font-size: 28px;
+  letter-spacing: 4px;
+  cursor: pointer;
+}
+
+.star {
+  color: #e2e8f0;
+  transition: color 0.15s;
+}
+
+.star:hover {
+  color: #eab308;
+}
+
+.star-on {
+  color: #eab308;
 }
 
 .alamat-options {
